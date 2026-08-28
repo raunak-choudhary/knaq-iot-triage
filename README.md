@@ -144,7 +144,7 @@ sensor_messages.json   devices.json
 
 | Tool | Purpose |
 |---|---|
-| pytest + httpx | Backend unit and integration tests (99 tests) |
+| pytest + httpx | Backend unit and integration tests (120 tests) |
 | pytest-cov | Coverage reporting |
 | Jest + React Testing Library | Frontend unit and integration tests (103 tests) |
 | MSW v2 | API mocking for frontend integration tests |
@@ -203,7 +203,7 @@ knaq-iot-triage/
 
   docker-compose.yml                One-command local bring-up (see Docker section)
   README.md                         This file
-  SOLUTION.md                       Design decisions and trade-offs
+  DESIGN_DECISIONS.md               Design decisions and trade-offs
 ```
 
 ---
@@ -386,7 +386,7 @@ source .venv/bin/activate         # Windows: .venv\Scripts\Activate.ps1
 pytest -q
 ```
 
-Expected result: **99 tests pass** across unit tests (transition rules, timezone utilities, ingest logic, alert service) and integration tests (full HTTP cycle with in-memory SQLite).
+Expected result: **120 tests pass** across unit tests (transition rules, timezone utilities, ingest logic, alert service) and integration tests (full HTTP cycle with in-memory SQLite), covering 97 percent of application code.
 
 To generate a coverage report:
 
@@ -506,7 +506,7 @@ On the Alert Queue, press **`a`** (or `A`) while one or more `new` alerts are se
 
 ## Design Decisions
 
-Key architectural decisions are documented in detail in [SOLUTION.md](SOLUTION.md). A brief summary:
+Key architectural decisions are documented in detail in [DESIGN_DECISIONS.md](DESIGN_DECISIONS.md). A brief summary:
 
 - **SQLite for development, PostgreSQL-compatible schema** via SQLAlchemy. Switching to PostgreSQL requires changing only `DATABASE_URL`.
 - **Layered backend architecture**: routers delegate to services, services delegate to repositories. This keeps business logic isolated and independently testable.
@@ -514,7 +514,7 @@ Key architectural decisions are documented in detail in [SOLUTION.md](SOLUTION.m
 - **Timestamps stored as bigint epoch milliseconds** throughout. This avoids SQLAlchemy naive/aware datetime comparison issues entirely.
 - **Company scoping enforced at the query level**, never as a post-fetch check, to eliminate time-of-check to time-of-use vulnerabilities.
 - **Pessimistic UI updates**: the frontend waits for server confirmation before updating state. This preserves audit trail accuracy.
-- **Anomaly detection using z-scores**: readings that are within threshold range but more than 2 standard deviations from the device type mean are flagged as anomalies.
+- **Anomaly detection using z-scores**: readings that are within threshold range but more than 2 standard deviations from that device's own mean for the same reading type are flagged as anomalies.
 
 ---
 

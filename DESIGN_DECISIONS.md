@@ -1,4 +1,4 @@
-# SOLUTION.md — Design Decisions and Trade-offs
+# Design Decisions and Trade-offs
 
 This document covers the key technical decisions made during implementation, the reasoning behind them, and an honest account of trade-offs made under the time cap.
 
@@ -263,7 +263,7 @@ Timezone conversion happens only at the I/O boundary:
 
 Claude Code was used throughout the project: analyzing the assignment and data files, designing the layered backend architecture, defining the database schema, planning the RTK Query cache tag strategy, and identifying correctness risks including timezone DST edge cases, cross-tenant TOCTOU scoping vulnerabilities, re-acknowledge guard conditions, and cache invalidation gaps.
 
-SOLUTION.md was written before any implementation code to commit to design decisions upfront rather than rationalize them after the fact.
+This document was written before any implementation code to commit to design decisions upfront rather than rationalize them after the fact.
 
 Claude Code wrote implementation code under continuous human review and direction. All architectural decisions, test scenarios, and correctness requirements were specified by the developer. Claude Code implemented those specifications.
 
