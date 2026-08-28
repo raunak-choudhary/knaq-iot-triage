@@ -1,6 +1,4 @@
 import { screen, waitFor, fireEvent } from "@testing-library/react";
-import { http, HttpResponse } from "msw";
-import { server } from "./setup";
 import { renderWithProviders } from "./testUtils";
 import { AlertDetail } from "@/features/alerts/components/AlertDetail";
 
@@ -17,8 +15,6 @@ jest.mock("next/navigation", () => ({
   useParams: () => ({}),
   redirect: jest.fn(),
 }));
-
-const BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
 describe("AlertDetailPage", () => {
   it("shows loading skeleton initially", () => {

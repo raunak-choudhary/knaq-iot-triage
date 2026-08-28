@@ -4,9 +4,8 @@ import React, {
   createContext,
   useCallback,
   useContext,
-  useEffect,
   useMemo,
-  useState,
+  useSyncExternalStore,
 } from "react";
 import { ThemeProvider } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
@@ -17,8 +16,37 @@ import { AppToastProvider } from "@/components/ui/AppToast";
 
 const STORAGE_KEY = "knaq-theme-mode";
 
+type ColorMode = "light" | "dark";
+
+// localStorage is an external store, so the theme is read through
+// useSyncExternalStore rather than mirrored into component state. The server
+// snapshot keeps SSR and the first client render in agreement.
+const themeListeners = new Set<() => void>();
+
+function subscribeToStoredMode(onStoreChange: () => void): () => void {
+  themeListeners.add(onStoreChange);
+  window.addEventListener("storage", onStoreChange);
+  return () => {
+    themeListeners.delete(onStoreChange);
+    window.removeEventListener("storage", onStoreChange);
+  };
+}
+
+function getStoredMode(): ColorMode {
+  return localStorage.getItem(STORAGE_KEY) === "dark" ? "dark" : "light";
+}
+
+function getServerMode(): ColorMode {
+  return "light";
+}
+
+function writeStoredMode(next: ColorMode): void {
+  localStorage.setItem(STORAGE_KEY, next);
+  themeListeners.forEach((listener) => listener());
+}
+
 interface ColorModeContextValue {
-  mode: "light" | "dark";
+  mode: ColorMode;
   toggleColorMode: () => void;
 }
 
@@ -32,21 +60,14 @@ export function useColorMode(): ColorModeContextValue {
 }
 
 export function Providers({ children }: { children: React.ReactNode }) {
-  const [mode, setMode] = useState<"light" | "dark">("light");
-
-  useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored === "dark" || stored === "light") {
-      setMode(stored);
-    }
-  }, []);
+  const mode = useSyncExternalStore(
+    subscribeToStoredMode,
+    getStoredMode,
+    getServerMode
+  );
 
   const toggleColorMode = useCallback(() => {
-    setMode((prev) => {
-      const next = prev === "light" ? "dark" : "light";
-      localStorage.setItem(STORAGE_KEY, next);
-      return next;
-    });
+    writeStoredMode(getStoredMode() === "light" ? "dark" : "light");
   }, []);
 
   const colorModeValue = useMemo(

@@ -39,7 +39,7 @@ import { LoadingSkeleton } from "@/components/ui/LoadingSkeleton";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { useToast } from "@/components/ui/AppToast";
-import type { AlertListItem, AlertStatus, Severity } from "@/features/alerts/types";
+import type { AlertStatus, Severity } from "@/features/alerts/types";
 import { extractApiError } from "@/utils/errorHelpers";
 import { SEVERITY_LABEL } from "@/constants/severity";
 
@@ -73,10 +73,19 @@ export default function AlertsPage() {
   const [page, setPage] = useState(1);
   const PAGE_SIZE = 10;
 
-  // Reset to page 1 when any filter or search changes
-  useEffect(() => {
+  // Reset to page 1 when any filter or search changes. Adjusting during render
+  // instead of in an effect avoids a second commit with a stale page number.
+  const filterKey = JSON.stringify([
+    filters.severity,
+    filters.status,
+    filters.deviceId,
+    debouncedSearch,
+  ]);
+  const [prevFilterKey, setPrevFilterKey] = useState(filterKey);
+  if (filterKey !== prevFilterKey) {
+    setPrevFilterKey(filterKey);
     setPage(1);
-  }, [filters.severity, filters.status, filters.deviceId, debouncedSearch]);
+  }
 
   const queryParams = useMemo(
     () => ({
@@ -91,7 +100,9 @@ export default function AlertsPage() {
   );
 
   const { data: alertsData, isLoading, isError, refetch } = useGetAlertsQuery(queryParams);
-  const alerts = alertsData?.items ?? [];
+  // Stable reference: `alerts` is a dependency of the keyboard shortcut effect,
+  // so a fresh array each render would re-bind the listener on every render.
+  const alerts = useMemo(() => alertsData?.items ?? [], [alertsData]);
   const totalPages = alertsData?.total_pages ?? 1;
   const statusCounts = alertsData?.status_counts ?? { new: 0, acknowledged: 0, resolved: 0, dismissed: 0 };
   const { data: devicesData } = useGetDevicesQuery();

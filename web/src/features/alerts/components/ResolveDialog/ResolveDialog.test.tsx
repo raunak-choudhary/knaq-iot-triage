@@ -8,19 +8,6 @@ const defaultProps = {
   onSubmit: jest.fn().mockResolvedValue(undefined),
 };
 
-function fillRequiredFields(user: ReturnType<typeof userEvent.setup>) {
-  return async () => {
-    // Resolution type
-    fireEvent.mouseDown(screen.getByLabelText(/resolution type/i));
-    await waitFor(() => screen.getByRole("listbox"));
-    fireEvent.click(screen.getByRole("option", { name: "Repaired" }));
-    // Root cause
-    await user.type(screen.getByLabelText(/root cause/i), "Overheating issue");
-    // Action taken
-    await user.type(screen.getByLabelText(/action taken/i), "Replaced fan unit");
-  };
-}
-
 describe("ResolveDialog", () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -37,7 +24,6 @@ describe("ResolveDialog", () => {
   });
 
   it("shows error for resolutionType after blur when empty", async () => {
-    const user = userEvent.setup();
     render(<ResolveDialog {...defaultProps} />);
     const select = screen.getByRole("combobox");
     fireEvent.blur(select);
@@ -49,7 +35,6 @@ describe("ResolveDialog", () => {
   });
 
   it("shows error for rootCause after blur when empty", async () => {
-    const user = userEvent.setup();
     render(<ResolveDialog {...defaultProps} />);
     const rootCauseInput = screen.getByLabelText(/root cause/i);
     fireEvent.blur(rootCauseInput);
