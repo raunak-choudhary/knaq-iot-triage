@@ -3,8 +3,6 @@ import pytest
 
 from tests.conftest import auth_headers
 from tests.factories.alert_factory import make_alert
-from tests.factories.device_factory import make_device
-from tests.factories.user_factory import make_user
 
 BROOKFIELD_DEVICES = ["ELV-001", "ELV-002", "ESC-002", "CMP-001"]
 HINES_DEVICES = ["ELV-003", "ELV-004", "CMP-002", "CMP-004"]

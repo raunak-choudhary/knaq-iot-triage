@@ -1,11 +1,7 @@
 """Unit tests for the ingest service."""
 import json
 import tempfile
-import uuid
 from pathlib import Path
-from unittest.mock import patch
-
-import pytest
 
 from app.models.alert import Alert
 from app.models.alert_timeline import AlertTimeline
@@ -208,7 +204,6 @@ def test_idempotent_rerun_identical_counts(db):
     data_dir = _write_data([_make_device_json()], [msg])
     counts1 = run_ingest(db, data_dir)
     counts2 = run_ingest(db, data_dir)
-    total_readings = db.query(SensorReading).count()
     # Second run adds duplicate row but total readings count increments
     # The idempotency is that alert/recovery counts are identical
     assert counts1["readings"] == counts2["readings"]

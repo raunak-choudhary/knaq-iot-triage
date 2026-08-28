@@ -1,3 +1,6 @@
+from typing import cast
+
+from sqlalchemy import Row
 from sqlalchemy.orm import Session
 
 from app.models.alert import Alert
@@ -23,7 +26,7 @@ class AlertRepository(BaseRepository):
         to_ms: int | None = None,
         page: int = 1,
         page_size: int = 20,
-    ) -> tuple[list[tuple[Alert, Device, User | None]], int, dict[str, int]]:
+    ) -> tuple[list[Row[tuple[Alert, Device, User | None]]], int, dict[str, int]]:
         base_query = (
             self.db.query(Alert, Device, User)
             .join(Device, Alert.device_id == Device.device_id)
@@ -75,11 +78,17 @@ class AlertRepository(BaseRepository):
             if s in status_counts:
                 status_counts[s] += 1
 
-        return items, total, status_counts
+        # outerjoin(User) yields NULL for unassigned alerts; mypy cannot infer that
+        # from the query, so the nullability is asserted here.
+        return (
+            cast(list[Row[tuple[Alert, Device, User | None]]], items),
+            total,
+            status_counts,
+        )
 
     def get_by_id_and_company(
         self, alert_id: str, company: str
-    ) -> tuple[Alert, Device, User | None] | None:
+    ) -> Row[tuple[Alert, Device, User | None]] | None:
         result = (
             self.db.query(Alert, Device, User)
             .join(Device, Alert.device_id == Device.device_id)
@@ -87,7 +96,7 @@ class AlertRepository(BaseRepository):
             .filter(Alert.id == alert_id, Device.company == company)
             .first()
         )
-        return result
+        return cast(Row[tuple[Alert, Device, User | None]] | None, result)
 
     def get_timeline(self, alert_id: str) -> list[AlertTimeline]:
         return (

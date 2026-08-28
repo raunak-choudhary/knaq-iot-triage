@@ -83,7 +83,8 @@ class AlertService:
         result = self.alert_repo.get_by_id_and_company(alert_id, self.current_user.company)
         if result is None:
             raise NotFoundError(detail=f"Alert '{alert_id}' not found.")
-        return result
+        alert, device, assignee = result
+        return alert, device, assignee
 
     def _get_full_response(self, alert: Alert, device: Device, assignee: User | None) -> AlertResponse:
         timeline = self.alert_repo.get_timeline(alert.id)

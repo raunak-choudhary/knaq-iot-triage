@@ -53,12 +53,12 @@ def _preload_dedup_keys(db: Session) -> tuple[set, set, set]:
         reading_keys.add((row.device_id, row.timestamp_utc, row.reading_name))
 
     alert_keys: set[tuple[str, int]] = set()
-    for row in db.query(Alert.device_id, Alert.timestamp_utc).all():
-        alert_keys.add((row.device_id, row.timestamp_utc))
+    for alert_row in db.query(Alert.device_id, Alert.timestamp_utc).all():
+        alert_keys.add((alert_row.device_id, alert_row.timestamp_utc))
 
     recovery_keys: set[tuple[str, int]] = set()
-    for row in db.query(Recovery.device_id, Recovery.timestamp_utc).all():
-        recovery_keys.add((row.device_id, row.timestamp_utc))
+    for recovery_row in db.query(Recovery.device_id, Recovery.timestamp_utc).all():
+        recovery_keys.add((recovery_row.device_id, recovery_row.timestamp_utc))
 
     return reading_keys, alert_keys, recovery_keys
 
@@ -164,10 +164,10 @@ def run_ingest(db: Session, data_dir: str | None = None) -> dict[str, int]:
                     counts["readings"] += 1
 
             elif msg_type == "alert":
-                key = (device_id, timestamp)
-                if key in alert_keys:
+                alert_key = (device_id, timestamp)
+                if alert_key in alert_keys:
                     continue
-                alert_keys.add(key)
+                alert_keys.add(alert_key)
 
                 alert_type = msg.get("alert_type", "unknown")
                 severity = msg.get("severity") or "warning"
@@ -201,10 +201,10 @@ def run_ingest(db: Session, data_dir: str | None = None) -> dict[str, int]:
                 counts["alerts"] += 1
 
             elif msg_type == "recovery":
-                key = (device_id, timestamp)
-                is_dup = key in recovery_keys
+                recovery_key = (device_id, timestamp)
+                is_dup = recovery_key in recovery_keys
                 if not is_dup:
-                    recovery_keys.add(key)
+                    recovery_keys.add(recovery_key)
 
                 recovery = Recovery(
                     device_id=device_id,

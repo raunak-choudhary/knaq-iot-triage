@@ -3,7 +3,6 @@ import pytest
 
 from app.models.alert import Alert
 from app.models.alert_timeline import AlertTimeline
-from app.models.recovery import Recovery
 from app.models.sensor_reading import SensorReading
 from app.services.ingest_service import run_ingest
 
@@ -66,8 +65,8 @@ def test_malformed_messages_not_in_db(db, ingest_data_dir):
 
 def test_idempotency(db, ingest_data_dir):
     """Running ingest twice should produce same final alert count."""
-    counts1 = run_ingest(db, ingest_data_dir)
-    counts2 = run_ingest(db, ingest_data_dir)
+    run_ingest(db, ingest_data_dir)
+    run_ingest(db, ingest_data_dir)  # second run
 
     alerts_after_1 = db.query(Alert).count()
     run_ingest(db, ingest_data_dir)  # third run

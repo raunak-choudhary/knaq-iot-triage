@@ -2,8 +2,7 @@
 import pytest
 
 from app.exceptions import NotFoundError, TransitionError
-from app.models.alert_timeline import AlertTimeline
-from app.schemas.alert import AssignRequest, NoteRequest, ResolveRequest, DismissRequest
+from app.schemas.alert import AssignRequest, DismissRequest, NoteRequest, ResolveRequest
 from app.services.alert_service import AlertService
 from tests.factories.alert_factory import make_alert
 from tests.factories.device_factory import make_device
@@ -197,7 +196,7 @@ def test_timeline_ordering(db, brookfield_device, alice, bob):
 def test_get_alert_cross_company_returns_404(db, brookfield_device, alice, hines_user):
     alert = make_alert(db, device_id="BF-001", status="new")
     # Hines user tries to access Brookfield alert
-    hines_device = make_device(db, device_id="HN-001", company="Hines")
+    make_device(db, device_id="HN-001", company="Hines")
     svc = AlertService(db, hines_user)
     with pytest.raises(NotFoundError):
         svc.acknowledge(alert.id)

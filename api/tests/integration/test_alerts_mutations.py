@@ -3,8 +3,6 @@ import pytest
 
 from tests.conftest import auth_headers
 from tests.factories.alert_factory import make_alert
-from tests.factories.device_factory import make_device
-from tests.factories.user_factory import make_user
 
 
 @pytest.fixture

@@ -1,17 +1,17 @@
 import math
+from datetime import UTC
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query
-from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.dependencies.auth import get_current_user
 from app.exceptions import NotFoundError
-from app.models.user import User
-from app.repositories.alert_repository import AlertRepository
 from app.models.alert import Alert
 from app.models.device import Device
+from app.models.user import User
+from app.repositories.alert_repository import AlertRepository
 from app.schemas.alert import (
     AlertListItem,
     AlertResponse,
@@ -97,8 +97,7 @@ def get_alert_stats(
     db: Session = Depends(get_db),
 ) -> AlertStatsResponse:
     import time
-    from datetime import datetime, timezone, timedelta
-    from zoneinfo import ZoneInfo
+    from datetime import datetime, timedelta
 
     # All company alerts
     base = (
@@ -120,13 +119,19 @@ def get_alert_stats(
         if a.severity in severity_counts:
             severity_counts[a.severity] += 1
 
-    # MTTR — mean time from alert created to resolved, in hours
+    # MTTR: mean time from alert created to resolved, in hours.
     resolved = [a for a in all_alerts if a.status == "resolved" and a.resolved_at is not None]
-    if resolved:
-        total_ms = sum((a.resolved_at - a.timestamp_utc) for a in resolved)
-        mttr_hours = round((total_ms / len(resolved)) / (1000 * 60 * 60), 2)
-    else:
-        mttr_hours = None
+    resolved_durations_ms = [
+        a.resolved_at - a.timestamp_utc
+        for a in all_alerts
+        if a.status == "resolved" and a.resolved_at is not None
+    ]
+    mttr_hours: float | None = None
+    if resolved_durations_ms:
+        total_ms = sum(resolved_durations_ms)
+        mttr_hours = round(
+            (total_ms / len(resolved_durations_ms)) / (1000 * 60 * 60), 2
+        )
 
     # Resolved this week vs last week
     now_ms = int(time.time() * 1000)
@@ -150,14 +155,14 @@ def get_alert_stats(
     day_counts: dict[str, int] = {}
     for a in all_alerts:
         if a.timestamp_utc >= cutoff_ms:
-            dt = datetime.fromtimestamp(a.timestamp_utc / 1000, tz=timezone.utc)
+            dt = datetime.fromtimestamp(a.timestamp_utc / 1000, tz=UTC)
             day = dt.strftime("%Y-%m-%d")
             day_counts[day] = day_counts.get(day, 0) + 1
 
     # Fill missing days in last 7
     volume_7d = []
     for i in range(6, -1, -1):
-        day = (datetime.now(tz=timezone.utc) - timedelta(days=i)).strftime("%Y-%m-%d")
+        day = (datetime.now(tz=UTC) - timedelta(days=i)).strftime("%Y-%m-%d")
         volume_7d.append(VolumeDayEntry(date=day, count=day_counts.get(day, 0)))
 
     # Anomaly count — readings flagged as statistically unusual for this company's devices
