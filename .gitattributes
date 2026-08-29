@@ -1,0 +1,2 @@
+# Keep generated and tooling files out of GitHub language statistics.
+graphify-out/** linguist-generated=true
